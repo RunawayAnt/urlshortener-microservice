@@ -3,10 +3,7 @@ const express = require('express');
 const cors = require('cors');
 const mongoose = require('mongoose');
 const bodyParser = require('body-parser');
-// const _url = require('url');
-
-// const autoIncrement = require('mongoose-auto-increment');
-// const { Schema } = mongoose;
+const validUrl = require('is-url');
 
 const app = express();
 
@@ -28,34 +25,23 @@ app.get('/api/hello', function(req, res) {
   res.json({ greeting: 'hello API' });
 });
 
-const validateURL = (url) => {
-  try {
-    const _url = new URL(url);
-    return _url;
-  } catch (err) {
-    return false;
-  }
-};
-
 const findAndCreateURL = require("./actions.js").findAndCreateURL;
 
 app.post('/api/shorturl', function(req, res, next) {
   const { url } = req.body;
-  const verified_url = validateURL(url);
-
-  if (verified_url) {
-    findAndCreateURL(verified_url, (err, data) => {
-      if (err) req.data = err;
-      req.data = data;
-      next();
-    });
-  } else {
-    req.data = { error: "Invalid URL" };
+  if (!validUrl(url)) {
+    req.data = { error: 'invalid url' };
     next();
   }
+  console.log(url);
+  findAndCreateURL(url, (err, data) => {
+    if (err) req.data = err;
+    req.data = data;
+    next();
+  });
 }, function(req, res) {
   const { original_url, short_url, error } = req.data;
-  res.json({ original_url, short_url, error });
+  res.send({ original_url, short_url, error });
 });
 
 const findURL = require("./actions.js").findURL;
